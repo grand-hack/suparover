@@ -140,7 +140,7 @@ async def set_color(function_name, tool_call_id, arguments, llm, context, result
 
 
 async def dance(function_name, tool_call_id, arguments, llm, context, result_callback):
-    await llm.push_frame(TransportMessageFrame({"message": "dance"}))
+    await llm.push_frame(TransportMessageFrame({"message": "dance foo"}))
     await result_callback("Car is moving.")
 
 
