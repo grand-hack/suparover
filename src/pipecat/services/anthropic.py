@@ -611,6 +611,7 @@ class AnthropicUserContextAggregator(LLMUserContextAggregator):
         # context aggregators.
         try:
             if isinstance(frame, UserImageRequestFrame):
+                logger.debug(f"!!! UserImageRequestFrame: [{frame.context}] {frame}")
                 # The LLM sends a UserImageRequestFrame upstream. Cache any context provided with
                 # that frame so we can use it when we assemble the image message in the assistant
                 # context aggregator.
@@ -629,9 +630,12 @@ class AnthropicUserContextAggregator(LLMUserContextAggregator):
                 # Push a new AnthropicImageMessageFrame with the text context we cached
                 # downstream to be handled by our assistant context aggregator. This is
                 # necessary so that we add the message to the context in the right order.
-                text = self._context._user_image_request_context.get(frame.user_id) or ""
+                # text = self._context._user_image_request_context.get(frame.user_id) or ""
+                text = self._context._user_image_request_context.get("*") or ""
+                logger.debug(f"!!! UserImageRawFrame for [{text}] {frame}")
                 if text:
-                    del self._context._user_image_request_context[frame.user_id]
+                    # del self._context._user_image_request_context[frame.user_id]
+                    pass
                 frame = AnthropicImageMessageFrame(user_image_raw_frame=frame, text=text)
                 await self.push_frame(frame)
         except Exception as e:

@@ -9,6 +9,10 @@ import aiohttp
 import os
 import sys
 
+from datetime import datetime as dt
+from PIL import Image
+import numpy as np
+
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -20,7 +24,7 @@ from pipecat.transports.services.daily import DailyParams, DailyTransport
 from pipecat.frames.frames import TransportMessageFrame
 from pipecat.services.deepgram import DeepgramSTTService
 from pipecat.processors.frame_processor import FrameProcessor
-from pipecat.frames.frames import TranscriptionFrame
+from pipecat.frames.frames import TranscriptionFrame, InputImageRawFrame
 
 from runner import configure
 
@@ -34,6 +38,7 @@ logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
 video_participant_id = None
+most_recent_img_frame = None
 
 
 class TranscriptionFrameLogger(FrameProcessor):
@@ -42,6 +47,26 @@ class TranscriptionFrameLogger(FrameProcessor):
         if isinstance(frame, TranscriptionFrame):
             logger.debug(f"!!! Transcription: {frame.text}")
         await self.push_frame(frame, direction)
+
+
+class ImageConverter(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        global most_recent_img_frame
+        await super().process_frame(frame, direction)
+        if isinstance(frame, InputImageRawFrame):
+            # logger.debug("!!!")
+            most_recent_img_frame = frame
+            timestamp = dt.now().strftime("%Y%m%d_%H%M%S_%f")
+            # filename = f"cam-{timestamp}.png"
+            filename = "cam.png"
+            filepath = os.path.join("frames", filename)
+            width, height = frame.size
+            np_array = np.frombuffer(frame.image, dtype=np.uint8)
+            img_array = np_array.reshape((height, width, 3))
+            img = Image.fromarray(img_array, mode="RGB")
+            img.save(filepath, "PNG")
+        else:
+            await self.push_frame(frame, direction)
 
 
 async def move_forward(function_name, tool_call_id, arguments, llm, context, result_callback):
@@ -90,11 +115,16 @@ async def get_weather(function_name, tool_call_id, arguments, llm, context, resu
 
 async def get_image(function_name, tool_call_id, arguments, llm, context, result_callback):
     question = arguments["question"]
-    await llm.request_image_frame(user_id=video_participant_id, text_content=question)
+    await llm.request_image_frame(user_id="*", text_content=question)
+    await image_converter.push_frame(most_recent_img_frame)
+    # await llm.push_frame(
+    #     AnthropicImageMessageFrame(user_image_raw_frame=most_recent_img_frame, text=question)
+    # )
 
 
 async def main():
     global llm
+    global image_converter
 
     async with aiohttp.ClientSession() as session:
         (room_url, token) = await configure(session)
@@ -111,6 +141,8 @@ async def main():
                 vad_analyzer=SileroVADAnalyzer(),
             ),
         )
+
+        image_converter = ImageConverter()
 
         tts = CartesiaTTSService(
             api_key=os.getenv("CARTESIA_API_KEY"),
@@ -210,8 +242,21 @@ You can move forward, backward, left, or right. You can also turn left or right.
 
 You have access to several functions to call to move. For example, call move_forward with a specified distance to move the car forward.
 
-Start by introducing yourself. When the user asks you to move, call the appropriate function with the appropriate parameters.
-        """
+When the user asks you to move, call the appropriate function with the appropriate parameters.
+
+You can answer questions about the user's video stream using the get_image tool. Some examples of phrases that \
+indicate you should use the get_image tool are:
+  - What do you see?
+  - What's in the video?
+  - Can you describe the video?
+  - Tell me about what you see.
+  - Tell me something interesting about what you see.
+  - What's happening in the video?
+
+If you need to use a tool, simply use the tool. Do not tell the user the tool you are using. Be brief and concise.
+ 
+Start by introducing yourself. 
+"""
 
         messages = [
             {
@@ -234,6 +279,7 @@ Start by introducing yourself. When the user asks you to move, call the appropri
         pipeline = Pipeline(
             [
                 transport.input(),  # Transport user input
+                image_converter,
                 stt,
                 TranscriptionFrameLogger(),
                 context_aggregator.user(),  # User speech to text
@@ -248,13 +294,18 @@ Start by introducing yourself. When the user asks you to move, call the appropri
 
         @transport.event_handler("on_first_participant_joined")
         async def on_first_participant_joined(transport, participant):
-            print(f"Participant joined: {participant}")
-            global video_participant_id
-            video_participant_id = participant["id"]
+            print(f"First participant joined: {participant}")
+            # global video_participant_id
+            # video_participant_id = participant["id"]
             # await transport.capture_participant_transcription(video_participant_id)
-            await transport.capture_participant_video(video_participant_id, framerate=0)
+            # await transport.capture_participant_video(video_participant_id, framerate=0)
             # Kick off the conversation.
             await task.queue_frames([context_aggregator.user().get_context_frame()])
+
+        @transport.event_handler("on_participant_joined")
+        async def on_participant_joined(transport, participant):
+            print(f"Participant joined -- setting up video capture: {participant}")
+            await transport.capture_participant_video(participant["id"], 1)
 
         runner = PipelineRunner()
         await runner.run(task)
