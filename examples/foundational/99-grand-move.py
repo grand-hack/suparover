@@ -250,6 +250,13 @@ async def main():
                 },
             },
             {
+                "name": "dance",
+                "description": "Move the model vehicle in a dancing pattern.",
+                "input_schema": {
+                    "type": "object",
+                },
+            },
+            {
                 "name": "get_image",
                 "description": "Get an image from the video stream.",
                 "input_schema": {
