@@ -18,6 +18,9 @@ from pipecat.services.cartesia import CartesiaTTSService
 from pipecat.services.anthropic import AnthropicLLMService
 from pipecat.transports.services.daily import DailyParams, DailyTransport
 from pipecat.frames.frames import TransportMessageFrame
+from pipecat.services.deepgram import DeepgramSTTService
+from pipecat.processors.frame_processor import FrameProcessor
+from pipecat.frames.frames import TranscriptionFrame
 
 from runner import configure
 
@@ -31,6 +34,14 @@ logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
 video_participant_id = None
+
+
+class TranscriptionFrameLogger(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, TranscriptionFrame):
+            logger.debug(f"!!! Transcription: {frame.text}")
+        await self.push_frame(frame, direction)
 
 
 async def move_forward(function_name, tool_call_id, arguments, llm, context, result_callback):
@@ -94,7 +105,8 @@ async def main():
             "Respond bot",
             DailyParams(
                 audio_out_enabled=True,
-                transcription_enabled=True,
+                # transcription_enabled=True,
+                vad_audio_passthrough=True,
                 vad_enabled=True,
                 vad_analyzer=SileroVADAnalyzer(),
             ),
@@ -217,9 +229,13 @@ Start by introducing yourself. When the user asks you to move, call the appropri
         context = OpenAILLMContext(messages, tools)
         context_aggregator = llm.create_context_aggregator(context)
 
+        stt = DeepgramSTTService(api_key=os.getenv("DEEPGRAM_API_KEY"))
+
         pipeline = Pipeline(
             [
                 transport.input(),  # Transport user input
+                stt,
+                TranscriptionFrameLogger(),
                 context_aggregator.user(),  # User speech to text
                 llm,  # LLM
                 tts,  # TTS
@@ -232,9 +248,10 @@ Start by introducing yourself. When the user asks you to move, call the appropri
 
         @transport.event_handler("on_first_participant_joined")
         async def on_first_participant_joined(transport, participant):
+            print(f"Participant joined: {participant}")
             global video_participant_id
             video_participant_id = participant["id"]
-            await transport.capture_participant_transcription(video_participant_id)
+            # await transport.capture_participant_transcription(video_participant_id)
             await transport.capture_participant_video(video_participant_id, framerate=0)
             # Kick off the conversation.
             await task.queue_frames([context_aggregator.user().get_context_frame()])
