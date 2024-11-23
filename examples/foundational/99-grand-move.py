@@ -123,6 +123,15 @@ async def move_right(function_name, tool_call_id, arguments, llm, context, resul
     await result_callback("Car is moving.")
 
 
+async def set_color(function_name, tool_call_id, arguments, llm, context, result_callback):
+    red = arguments["red"]
+    green = arguments["green"]
+    blue = arguments["blue"]
+
+    await llm.push_frame(TransportMessageFrame({"message": f"set_color {red} {green} {blue}"}))
+    await result_callback("Car is moving.")
+
+
 async def dance(function_name, tool_call_id, arguments, llm, context, result_callback):
     await llm.push_frame(TransportMessageFrame({"message": "dance"}))
     await result_callback("Car is moving.")
@@ -188,6 +197,7 @@ async def main():
         llm.register_function("move_backward", move_backward)
         llm.register_function("move_left", move_left)
         llm.register_function("move_right", move_right)
+        llm.register_function("set_color", set_color)
         llm.register_function("dance", dance)
         llm.register_function("get_image", get_image)
         llm.register_function("identify_person", identify_person)
@@ -247,6 +257,28 @@ async def main():
                         },
                     },
                     "required": ["distance"],
+                },
+            },
+            {
+                "name": "set_color",
+                "description": "Set the LED color of the 'eyes' (lights) of the model vehicle.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "red": {
+                            "type": "number",
+                            "description": "The integer (0 - 255) for the red component of the color.",
+                        },
+                        "green": {
+                            "type": "number",
+                            "description": "The integer (0 - 255) for the green component of the color.",
+                        },
+                        "blue": {
+                            "type": "number",
+                            "description": "The integer (0 - 255) for the blue component of the color.",
+                        },
+                    },
+                    "required": ["red", "green", "blue"],
                 },
             },
             {
