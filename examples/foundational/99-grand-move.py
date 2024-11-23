@@ -76,7 +76,7 @@ async def move_forward(function_name, tool_call_id, arguments, llm, context, res
     velocity = 40
     heading = 90
     angle = 0
-    seconds = distance * 0.5
+    seconds = distance * 0.8
 
     await llm.push_frame(
         TransportMessageFrame({"message": f"move {velocity} {heading} {angle} {seconds}"})
@@ -120,6 +120,11 @@ async def move_right(function_name, tool_call_id, arguments, llm, context, resul
     await llm.push_frame(
         TransportMessageFrame({"message": f"move {velocity} {heading} {angle} {seconds}"})
     )
+    await result_callback("Car is moving.")
+
+
+async def dance(function_name, tool_call_id, arguments, llm, context, result_callback):
+    await llm.push_frame(TransportMessageFrame({"message": "dance"}))
     await result_callback("Car is moving.")
 
 
@@ -183,6 +188,7 @@ async def main():
         llm.register_function("move_backward", move_backward)
         llm.register_function("move_left", move_left)
         llm.register_function("move_right", move_right)
+        llm.register_function("dance", dance)
         llm.register_function("get_image", get_image)
         llm.register_function("identify_person", identify_person)
 
