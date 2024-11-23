@@ -71,6 +71,13 @@ class ImageConverter(FrameProcessor):
             await self.push_frame(frame, direction)
 
 
+async def turn(function_name, tool_call_id, arguments, llm, context, result_callback):
+    direction = arguments["direction"]
+
+    await llm.push_frame(TransportMessageFrame({"message": f"turn {direction}"}))
+    await result_callback(f"Car is turning {direction}.")
+
+
 async def move_forward(function_name, tool_call_id, arguments, llm, context, result_callback):
     distance = arguments["distance"]
     velocity = 40
@@ -193,6 +200,7 @@ async def main():
             model="claude-3-5-sonnet-latest",
             enable_prompt_caching_beta=True,
         )
+        llm.register_function("turn", turn)
         llm.register_function("move_forward", move_forward)
         llm.register_function("move_backward", move_backward)
         llm.register_function("move_left", move_left)
@@ -203,6 +211,21 @@ async def main():
         llm.register_function("identify_person", identify_person)
 
         tools = [
+            {
+                "name": "turn",
+                "description": "Turn the model vehicle left or right by 90 degrees.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "direction": {
+                            "type": "string",
+                            "enum": ["left", "right"],
+                            "description": "The direction to turn.",
+                        },
+                    },
+                    "required": ["direction"],
+                },
+            },
             {
                 "name": "move_forward",
                 "description": "Move the model vehicle forward by the given distance in feet.",
