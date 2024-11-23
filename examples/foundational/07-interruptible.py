@@ -10,7 +10,7 @@ import os
 import sys
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
-from pipecat.frames.frames import LLMMessagesFrame
+from pipecat.frames.frames import LLMMessagesFrame, TranscriptionFrame
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
@@ -18,6 +18,10 @@ from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.services.cartesia import CartesiaTTSService
 from pipecat.services.openai import OpenAILLMService
 from pipecat.transports.services.daily import DailyParams, DailyTransport
+from pipecat.audio.filters.krisp_filter import KrispFilter
+from pipecat.services.deepgram import DeepgramSTTService
+from pipecat.processors.frame_processor import FrameProcessor
+
 
 from runner import configure
 
@@ -31,6 +35,14 @@ logger.remove(0)
 logger.add(sys.stderr, level="DEBUG")
 
 
+class TranscriptionFrameLogger(FrameProcessor):
+    async def process_frame(self, frame, direction):
+        await super().process_frame(frame, direction)
+        if isinstance(frame, TranscriptionFrame):
+            logger.debug(f"!!! Transcription: {frame.text}")
+        await self.push_frame(frame, direction)
+
+
 async def main():
     async with aiohttp.ClientSession() as session:
         (room_url, token) = await configure(session)
@@ -41,11 +53,14 @@ async def main():
             "Respond bot",
             DailyParams(
                 audio_out_enabled=True,
-                transcription_enabled=True,
                 vad_enabled=True,
                 vad_analyzer=SileroVADAnalyzer(),
+                vad_audio_passthrough=True,
+                audio_in_filter=KrispFilter(),
             ),
         )
+
+        stt = DeepgramSTTService(api_key=os.getenv("DEEPGRAM_API_KEY"))
 
         tts = CartesiaTTSService(
             api_key=os.getenv("CARTESIA_API_KEY"),
@@ -67,6 +82,8 @@ async def main():
         pipeline = Pipeline(
             [
                 transport.input(),  # Transport user input
+                stt,
+                TranscriptionFrameLogger(),
                 context_aggregator.user(),  # User responses
                 llm,  # LLM
                 tts,  # TTS

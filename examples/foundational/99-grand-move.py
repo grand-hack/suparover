@@ -13,6 +13,8 @@ from datetime import datetime as dt
 from PIL import Image
 import numpy as np
 
+from pipecat.audio.filters.krisp_filter import KrispFilter
+
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
@@ -184,6 +186,7 @@ async def main():
                 vad_audio_passthrough=True,
                 vad_enabled=True,
                 vad_analyzer=SileroVADAnalyzer(),
+                audio_in_filter=KrispFilter(),
             ),
         )
 
