@@ -58,7 +58,7 @@ class ImageConverter(FrameProcessor):
         if isinstance(frame, InputImageRawFrame):
             # logger.debug("!!!")
             most_recent_img_frame = frame
-            timestamp = dt.now().strftime("%Y%m%d_%H%M%S_%f")
+            # timestamp = dt.now().strftime("%Y%m%d_%H%M%S_%f")
             # filename = f"cam-{timestamp}.png"
             filename = "cam.png"
             filepath = os.path.join("frames", filename)
@@ -97,17 +97,30 @@ async def move_backward(function_name, tool_call_id, arguments, llm, context, re
     await result_callback("Car is moving.")
 
 
-# async def move_model_car(function_name, tool_call_id, arguments, llm, context, result_callback):
-#     velocity = arguments["velocity"]
-#     heading = arguments["heading"]
-#     angle = arguments["angle"]
-#     seconds = arguments["seconds"]
+async def move_left(function_name, tool_call_id, arguments, llm, context, result_callback):
+    distance = arguments["distance"]
+    velocity = 40
+    heading = 180
+    angle = 0
+    seconds = distance * 0.8
 
-#     heading = heading + 90
-#     await llm.push_frame(
-#         TransportMessageFrame({"message": f"move {velocity} {heading} {angle} {seconds}"})
-#     )
-#     await result_callback("Car is moving.")
+    await llm.push_frame(
+        TransportMessageFrame({"message": f"move {velocity} {heading} {angle} {seconds}"})
+    )
+    await result_callback("Car is moving.")
+
+
+async def move_right(function_name, tool_call_id, arguments, llm, context, result_callback):
+    distance = arguments["distance"]
+    velocity = 40
+    heading = 0
+    angle = 0
+    seconds = distance * 0.8
+
+    await llm.push_frame(
+        TransportMessageFrame({"message": f"move {velocity} {heading} {angle} {seconds}"})
+    )
+    await result_callback("Car is moving.")
 
 
 async def get_weather(function_name, tool_call_id, arguments, llm, context, result_callback):
@@ -168,7 +181,8 @@ async def main():
         )
         llm.register_function("move_forward", move_forward)
         llm.register_function("move_backward", move_backward)
-        # llm.register_function("move_model_car", move_model_car)
+        llm.register_function("move_left", move_left)
+        llm.register_function("move_right", move_right)
         llm.register_function("get_image", get_image)
         llm.register_function("identify_person", identify_person)
 
@@ -201,32 +215,34 @@ async def main():
                     "required": ["distance"],
                 },
             },
-            # {
-            #     "name": "move_model_car",
-            #     "description": "Move or turn a model vehicle. The vehicle will move at the specified velocity in the specified direction for the specified duration, while turning the specified number of radians.",
-            #     "input_schema": {
-            #         "type": "object",
-            #         "properties": {
-            #             "velocity": {
-            #                 "type": "number",
-            #                 "description": "How fast to move. Range is between 40 and 60.",
-            #             },
-            #             "heading": {
-            #                 "type": "number",
-            #                 "description": "The direction to move. 0 is forward. 180 is backward.",
-            #             },
-            #             "angle": {
-            #                 "type": "number",
-            #                 "description": "Number of pi radians to turn the car. Range is -1 to 1.",
-            #             },
-            #             "seconds": {
-            #                 "type": "number",
-            #                 "description": "Number of seconds to run the motors.",
-            #             },
-            #         },
-            #         "required": ["location"],
-            #     },
-            # },
+            {
+                "name": "move_left",
+                "description": "Move the model vehicle left by the given distance in feet.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "distance": {
+                            "type": "number",
+                            "description": "Number of feet to move.",
+                        },
+                    },
+                    "required": ["distance"],
+                },
+            },
+            {
+                "name": "move_right",
+                "description": "Move the model vehicle right by the given distance in feet.",
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "distance": {
+                            "type": "number",
+                            "description": "Number of feet to move.",
+                        },
+                    },
+                    "required": ["distance"],
+                },
+            },
             {
                 "name": "get_image",
                 "description": "Get an image from the video stream.",
