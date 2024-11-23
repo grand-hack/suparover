@@ -26,6 +26,8 @@ from pipecat.services.deepgram import DeepgramSTTService
 from pipecat.processors.frame_processor import FrameProcessor
 from pipecat.frames.frames import TranscriptionFrame, InputImageRawFrame
 
+from facial_recognition_lite import get_most_similar_record
+
 from runner import configure
 
 from loguru import logger
@@ -122,6 +124,15 @@ async def get_image(function_name, tool_call_id, arguments, llm, context, result
     # )
 
 
+async def identify_person(function_name, tool_call_id, arguments, llm, context, result_callback):
+    name, content, distance = get_most_similar_record("frames/cam.png")
+    logger.debug(f"!!! face distance: {name}, {content}, {distance}")
+    if name:
+        await result_callback({"success": True, "name": name, "content": content})
+    else:
+        await result_callback({"success": False, "response": "I think I have not met you before."})
+
+
 async def main():
     global llm
     global image_converter
@@ -159,6 +170,7 @@ async def main():
         llm.register_function("move_backward", move_backward)
         # llm.register_function("move_model_car", move_model_car)
         llm.register_function("get_image", get_image)
+        llm.register_function("identify_person", identify_person)
 
         tools = [
             {
@@ -227,6 +239,13 @@ async def main():
                         }
                     },
                     "required": ["question"],
+                },
+            },
+            {
+                "name": "identify_person",
+                "description": "Call this function to check if the person closest to you is someone you know.",
+                "input_schema": {
+                    "type": "object",
                 },
             },
         ]
