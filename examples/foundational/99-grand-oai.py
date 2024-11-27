@@ -15,12 +15,12 @@ import numpy as np
 from pipecat.audio.filters.krisp_filter import KrispFilter
 
 from pipecat.audio.vad.silero import SileroVADAnalyzer
+from pipecat.services.openai import OpenAILLMService
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineParams, PipelineTask
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.services.cartesia import CartesiaTTSService
-from pipecat.services.anthropic import AnthropicLLMService
 from pipecat.transports.services.daily import DailyParams, DailyTransport
 from pipecat.frames.frames import TransportMessageFrame
 from pipecat.services.deepgram import DeepgramSTTService
@@ -196,12 +196,8 @@ async def main():
             voice_id="79a125e8-cd45-4c13-8a67-188112f4dd22",  # British Lady
         )
 
-        llm = AnthropicLLMService(
-            api_key=os.getenv("ANTHROPIC_API_KEY"),
-            # model="claude-3-5-sonnet-20240620",
-            model="claude-3-5-sonnet-latest",
-            enable_prompt_caching_beta=True,
-        )
+        llm = OpenAILLMService(api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o")
+
         llm.register_function("turn", turn)
         llm.register_function("move_forward", move_forward)
         llm.register_function("move_backward", move_backward)
