@@ -178,7 +178,7 @@ async def main():
         transport = DailyTransport(
             room_url,
             token,
-            "Respond bot",
+            "Bot Driver Process",
             DailyParams(
                 audio_out_enabled=True,
                 # transcription_enabled=True,
@@ -210,124 +210,155 @@ async def main():
 
         tools = [
             {
-                "name": "turn",
-                "description": "Turn the model vehicle left or right by 90 degrees.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "direction": {
-                            "type": "string",
-                            "enum": ["left", "right"],
-                            "description": "The direction to turn.",
+                "type": "function",
+                "function": {
+                    "name": "turn",
+                    "description": "Turn the model vehicle left or right by 90 degrees.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "direction": {
+                                "type": "string",
+                                "enum": ["left", "right"],
+                                "description": "The direction to turn.",
+                            },
                         },
+                        "required": ["direction"],
                     },
-                    "required": ["direction"],
                 },
             },
             {
-                "name": "move_forward",
-                "description": "Move the model vehicle forward by the given distance in feet.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "distance": {
-                            "type": "number",
-                            "description": "Number of feet to move.",
+                "type": "function",
+                "function": {
+                    "name": "move_forward",
+                    "description": "Move the model vehicle forward by the given distance in feet.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "distance": {
+                                "type": "number",
+                                "description": "Number of feet to move.",
+                            },
                         },
+                        "required": ["distance"],
                     },
-                    "required": ["distance"],
                 },
             },
             {
-                "name": "move_backward",
-                "description": "Move the model vehicle backward by the given distance in feet.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "distance": {
-                            "type": "number",
-                            "description": "Number of feet to move.",
+                "type": "function",
+                "function": {
+                    "name": "move_backward",
+                    "description": "Move the model vehicle backward by the given distance in feet.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "distance": {
+                                "type": "number",
+                                "description": "Number of feet to move.",
+                            },
                         },
+                        "required": ["distance"],
                     },
-                    "required": ["distance"],
                 },
             },
             {
-                "name": "move_left",
-                "description": "Move the model vehicle left by the given distance in feet.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "distance": {
-                            "type": "number",
-                            "description": "Number of feet to move.",
+                "type": "function",
+                "function": {
+                    "name": "move_left",
+                    "description": "Move the model vehicle left by the given distance in feet.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "distance": {
+                                "type": "number",
+                                "description": "Number of feet to move.",
+                            },
                         },
+                        "required": ["distance"],
                     },
-                    "required": ["distance"],
                 },
             },
             {
-                "name": "move_right",
-                "description": "Move the model vehicle right by the given distance in feet.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "distance": {
-                            "type": "number",
-                            "description": "Number of feet to move.",
+                "type": "function",
+                "function": {
+                    "name": "move_right",
+                    "description": "Move the model vehicle right by the given distance in feet.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "distance": {
+                                "type": "number",
+                                "description": "Number of feet to move.",
+                            },
                         },
+                        "required": ["distance"],
                     },
-                    "required": ["distance"],
                 },
             },
             {
-                "name": "set_color",
-                "description": "Set the LED color of the 'eyes' (lights) of the model vehicle.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "red": {
-                            "type": "number",
-                            "description": "The integer (0 - 255) for the red component of the color.",
+                "type": "function",
+                "function": {
+                    "name": "set_color",
+                    "description": "Set the LED color of the 'eyes' (lights) of the model vehicle.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "red": {
+                                "type": "number",
+                                "description": "The integer (0 - 255) for the red component of the color.",
+                            },
+                            "green": {
+                                "type": "number",
+                                "description": "The integer (0 - 255) for the green component of the color.",
+                            },
+                            "blue": {
+                                "type": "number",
+                                "description": "The integer (0 - 255) for the blue component of the color.",
+                            },
                         },
-                        "green": {
-                            "type": "number",
-                            "description": "The integer (0 - 255) for the green component of the color.",
-                        },
-                        "blue": {
-                            "type": "number",
-                            "description": "The integer (0 - 255) for the blue component of the color.",
-                        },
+                        "required": ["red", "green", "blue"],
                     },
-                    "required": ["red", "green", "blue"],
                 },
             },
             {
-                "name": "dance",
-                "description": "Move the model vehicle in a dancing pattern.",
-                "input_schema": {
-                    "type": "object",
-                },
-            },
-            {
-                "name": "get_image",
-                "description": "Get an image from the video stream.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "question": {
-                            "type": "string",
-                            "description": "The question that the user is asking about the image.",
-                        }
+                "type": "function",
+                "function": {
+                    "name": "dance",
+                    "description": "Move the model vehicle in a dancing pattern.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
                     },
-                    "required": ["question"],
                 },
             },
             {
-                "name": "identify_person",
-                "description": "Call this function to check if the person closest to you is someone you know.",
-                "input_schema": {
-                    "type": "object",
+                "type": "function",
+                "function": {
+                    "name": "get_image",
+                    "description": "Get an image from the video stream.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "question": {
+                                "type": "string",
+                                "description": "The question that the user is asking about the image.",
+                            }
+                        },
+                        "required": ["question"],
+                    },
+                },
+            },
+            {
+                "type": "function",
+                "function": {
+                    "name": "identify_person",
+                    "description": "Call this function to check if the person closest to you is someone you know.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {},
+                        "required": [],
+                    },
                 },
             },
         ]
@@ -393,20 +424,23 @@ Start by introducing yourself.
 
         task = PipelineTask(pipeline, PipelineParams(allow_interruptions=True, enable_metrics=True))
 
-        @transport.event_handler("on_first_participant_joined")
-        async def on_first_participant_joined(transport, participant):
-            print(f"First participant joined: {participant}")
-            # global video_participant_id
-            # video_participant_id = participant["id"]
-            # await transport.capture_participant_transcription(video_participant_id)
-            # await transport.capture_participant_video(video_participant_id, framerate=0)
-            # Kick off the conversation.
-            await task.queue_frames([context_aggregator.user().get_context_frame()])
+        # @transport.event_handler("on_first_participant_joined")
+        # async def on_first_participant_joined(transport, participant):
+        #     print(f"First participant joined: {participant}")
+        #     # global video_participant_id
+        #     # video_participant_id = participant["id"]
+        #     # await transport.capture_participant_transcription(video_participant_id)
+        #     # await transport.capture_participant_video(video_participant_id, framerate=0)
+        #     # Kick off the conversation.
+        #     # await task.queue_frames([context_aggregator.user().get_context_frame()])
 
         @transport.event_handler("on_participant_joined")
         async def on_participant_joined(transport, participant):
             print(f"Participant joined -- setting up video capture: {participant}")
-            await transport.capture_participant_video(participant["id"], 1)
+            if "userName" not in participant["info"]:
+                print(f"Guest participant joined -- setting up video capture: {participant}")
+                await transport.capture_participant_video(participant["id"], framerate=1)
+            # await transport.capture_participant_video(participant["id"], framerate=1)
 
         runner = PipelineRunner()
         await runner.run(task)
